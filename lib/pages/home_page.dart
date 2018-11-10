@@ -8,63 +8,87 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  List currencies;
 
-       List currencies;
+  List<MaterialColor> _colors = [Colors.blue, Colors.indigo, Colors.red];
 
-       List<MaterialColor> _colors = [ Colors.blue ,  Colors.indigo, Colors.red];
+  @override
+  void initState() {
+    getCurrencies();
+    super.initState();
+  }
 
-      @override
-      void initState() {
-        currencies =  getCurrencies();
-      }
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("Crypto Watch"),
+        ),
+        body: Column(
+          children: <Widget>[Flexible(
+          child: CryptoWidget(),
+        ),],
+        )
+      ),
+    );
+  }
 
-      @override
-      Widget build(BuildContext context) {
-        return Container(
-           child: Scaffold(
-             appBar: AppBar(
-               title: Text("Crypto Watch"),
-             ),
-             body: Material(),
-           ),
-        );
-      }
-    
-      Widget CryptoWidget(){
-        return Container(
-          child: Flexible(
-            child: ListView.builder(
-              itemCount: currencies.length,
-              itemBuilder: (BuildContext context , int index){
-                final Map currency = currencies[index];
-                final MaterialColor color = _colors[index % _colors.length];
-                return getListItemUi(currency,color);
-              },
-            ),
-          ),
-        );
-      }
-    
-      Future<List> getCurrencies() async {
-        String url = "https://api.coinmarketcap.com/v1/ticker/?limit=50";
-        http.Response response = await http.get(url);
-        return json.decode(response.body);
-      }
+  Widget CryptoWidget() {
+    return Container(
+      child: Column(children: <Widget>[
+        Flexible(
+        child: ListView.builder(
+          itemCount: currencies.length,
+          itemBuilder: (BuildContext context, int index) {
+            final Map currency = currencies[index];
+            final MaterialColor color = _colors[index % _colors.length];
+            return getListItemUi(currency, color);
+          },
+        ),
+      ),
+      ],)
+    );
+  }
 
-      ListTile getListItemUi(Map currency, MaterialColor color)
-      {
-        return ListTile(leading: CircleAvatar(backgroundColor: color,
-        child: Text(currency['name'][0]),),
-        title: Text(currency['name'],
-                    style: TextStyle(fontWeight: FontWeight.bold),)
-                    subtitle: _getSubtitleText(currency['price_usd'], currency['percent_change_1h']
-                    ),);
-      }
+  void getCurrencies() async {
+    String url = "https://api.coinmarketcap.com/v1/ticker/?limit=50";
+    http.Response response = await http.get(url).then((http.Response response) {
+      setState(() {
+        currencies = json.decode(response.body);
+      });
+    });
+  }
 
-    Widget _getSubtitleText(String priceUSD, String percentageChange){
-      TextSpan priceTextWidget = new TextSpan(text: "\$$priceUSD\n",
-      style: TextStyle(color: Colors.black));
+  ListTile getListItemUi(Map currency, MaterialColor color) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: color,
+        child: Text(currency['name'][0]),
+      ),
+      title: Text(
+        currency['name'],
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      subtitle: _getSubtitleText(
+          currency['price_usd'], currency['percent_change_1h']),
+      isThreeLine: true,
+    );
+  }
 
-      String
-    }
+  Widget _getSubtitleText(String priceUSD, String percentageChange) {
+    TextSpan priceTextWidget = new TextSpan(
+        text: "\$$priceUSD\n", style: TextStyle(color: Colors.black));
+    String percentageChangeText = "1 hour: $percentageChange%";
+    TextSpan percentageChangeTextWidget = new TextSpan(
+        text: percentageChangeText,
+        style: TextStyle(
+            color: double.parse(percentageChange) > 0
+                ? Colors.green
+                : Colors.red));
+
+    return RichText(
+      text: TextSpan(children: [priceTextWidget, percentageChangeTextWidget]),
+    );
+  }
 }
